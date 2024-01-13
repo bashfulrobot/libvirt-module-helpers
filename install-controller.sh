@@ -61,6 +61,38 @@ mkdir /root/.kube
 cp /etc/rancher/rke2/rke2.yaml /root/.kube/config
 sed -i "s/127.0.0.1/$SERVER_IP/g" /root/.kube/config
 cp /root/.kube/config /root/kubeconfig
+
+## Setup metallb
+
+# If you’re using kube-proxy in IPVS mode, since Kubernetes v1.14.2 you have to enable strict ARP mode.
+
+# see what changes would be made, returns nonzero returncode if different
+/var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
+    sed -e "s/strictARP: false/strictARP: true/" |
+    /var/lib/rancher/rke2/bin/kubectl diff -f - -n kube-system
+
+# actually apply the changes, returns nonzero returncode on errors only
+/var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
+    sed -e "s/strictARP: false/strictARP: true/" |
+    /var/lib/rancher/rke2/bin/kubectl apply -f - -n kube-system
+
+/var/lib/rancher/rke2/bin/kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
+
+cat <<EOF >/tmp/metallb-namespace.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metallb-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+EOF
+
+/var/lib/rancher/rke2/bin/kubectl apply -f /tmp/metallb-namespace.yaml
+
+## Tmp HTTP Server
 chmod +x /tmp/miniserve
 /tmp/miniserve /root/.
 ## Delete this script
