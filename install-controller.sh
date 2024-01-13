@@ -42,8 +42,6 @@ spec:
           metallb.universe.tf/loadBalancerIPs: $load_balancer_ip ## Configure static load balancer IP
 EOF
 
-=====
-
 ## Install rke2-server
 curl -sfL https://get.rke2.io | sh -
 systemctl enable rke2-server.service
