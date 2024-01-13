@@ -12,6 +12,12 @@ first_three_octets=$(echo "$SERVER_IP" | cut -d. -f1-3)
 
 # Build the complete metallb IP address - .5 is the load balancer IP
 load_balancer_ip="${first_three_octets}.5"
+metallb_pool_ip1="${first_three_octets}.30"
+metallb_pool_ip2="${first_three_octets}.31"
+metallb_pool_ip3="${first_three_octets}.32"
+metallb_pool_ip4="${first_three_octets}.33"
+metallb_pool_ip5="${first_three_octets}.34"
+metallb_pool_ip6="${first_three_octets}.35"
 
 mkdir -p "$file_path"
 touch $file_path/rke2-ingress-nginx-config.yaml
@@ -68,18 +74,18 @@ cp /root/.kube/config /root/kubeconfig
 # If you’re using kube-proxy in IPVS mode, since Kubernetes v1.14.2 you have to enable strict ARP mode.
 
 # see what changes would be made, returns nonzero returncode if different
-/var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
-  sed -e "s/strictARP: false/strictARP: true/" |
-  /var/lib/rancher/rke2/bin/kubectl diff -f - -n kube-system
+# /var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
+#   sed -e "s/strictARP: false/strictARP: true/" |
+#   /var/lib/rancher/rke2/bin/kubectl diff -f - -n kube-system
 
 # actually apply the changes, returns nonzero returncode on errors only
-/var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
-  sed -e "s/strictARP: false/strictARP: true/" |
-  /var/lib/rancher/rke2/bin/kubectl apply -f - -n kube-system
+# /var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
+#   sed -e "s/strictARP: false/strictARP: true/" |
+#   /var/lib/rancher/rke2/bin/kubectl apply -f - -n kube-system
 
 /var/lib/rancher/rke2/bin/kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
 
-cat <<EOF >/tmp/metallb-namespace.yaml
+cat <<EOF >/tmp/metallb-config.yaml
 ---
 apiVersion: v1
 kind: Namespace
@@ -89,9 +95,33 @@ metadata:
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
     pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:
+  - $metallb_pool_ip1/32
+  - $metallb_pool_ip2/32
+  - $metallb_pool_ip3/32
+  - $metallb_pool_ip4/32
+  - $metallb_pool_ip5/32
+  - $metallb_pool_ip6/32
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default
 EOF
 
-/var/lib/rancher/rke2/bin/kubectl apply -f /tmp/metallb-namespace.yaml
+/var/lib/rancher/rke2/bin/kubectl apply -f /tmp/metallb-config.yaml
 
 ## Tmp HTTP Server
 chmod +x /tmp/miniserve
