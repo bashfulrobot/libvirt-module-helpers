@@ -5,7 +5,7 @@ SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
 
 ## Enable nginx compatibility with metallb on RKE2
 # Set the file path
-file_path="/var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml"
+file_path="/var/lib/rancher/rke2/server/manifests"
 
 # Extract the first 3 octets from $SERVER_IP
 first_three_octets=$(echo "$SERVER_IP" | cut -d. -f1-3)
@@ -13,8 +13,11 @@ first_three_octets=$(echo "$SERVER_IP" | cut -d. -f1-3)
 # Build the complete metallb IP address - .5 is the load balancer IP
 load_balancer_ip="${first_three_octets}.5"
 
+mkdir -p "$file_path"
+touch $file_path/rke2-ingress-nginx-config.yaml
+
 # Create the file with the desired content
-cat <<EOF >"$file_path"
+cat <<EOF >"$file_path/rke2-ingress-nginx-config.yaml"
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChartConfig
@@ -68,13 +71,13 @@ cp /root/.kube/config /root/kubeconfig
 
 # see what changes would be made, returns nonzero returncode if different
 /var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
-    sed -e "s/strictARP: false/strictARP: true/" |
-    /var/lib/rancher/rke2/bin/kubectl diff -f - -n kube-system
+  sed -e "s/strictARP: false/strictARP: true/" |
+  /var/lib/rancher/rke2/bin/kubectl diff -f - -n kube-system
 
 # actually apply the changes, returns nonzero returncode on errors only
 /var/lib/rancher/rke2/bin/kubectl get configmap kube-proxy -n kube-system -o yaml |
-    sed -e "s/strictARP: false/strictARP: true/" |
-    /var/lib/rancher/rke2/bin/kubectl apply -f - -n kube-system
+  sed -e "s/strictARP: false/strictARP: true/" |
+  /var/lib/rancher/rke2/bin/kubectl apply -f - -n kube-system
 
 /var/lib/rancher/rke2/bin/kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
 
