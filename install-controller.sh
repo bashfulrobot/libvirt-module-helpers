@@ -69,9 +69,17 @@ sleep 60
 ## Get the token
 TOKEN=$(cat /var/lib/rancher/rke2/server/node-token)
 
-## Create config.yaml
-echo "server: https://$SERVER_IP:9345" >/root/config.yaml
-echo "token: $TOKEN" >>/root/config.yaml
+## Create worder config.yaml
+# echo "server: https://$SERVER_IP:9345" >/root/config.yaml
+# echo "token: $TOKEN" >>/root/config.yaml
+
+cat <<EOF >/root/config.yaml
+server: https://$SERVER_IP:9345
+token: $TOKEN
+kube-proxy-arg:
+  - proxy-mode=ipvs
+  - ipvs-strict-arp=true
+EOF
 
 ## Copy kubeconfig and replace the server address
 mkdir /root/.kube
