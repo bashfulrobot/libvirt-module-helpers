@@ -76,9 +76,6 @@ TOKEN=$(cat /var/lib/rancher/rke2/server/node-token)
 cat <<EOF >/root/config.yaml
 server: https://$SERVER_IP:9345
 token: $TOKEN
-kube-proxy-arg:
-  - proxy-mode=ipvs
-  - ipvs-strict-arp=true
 EOF
 
 ## Copy kubeconfig and replace the server address
