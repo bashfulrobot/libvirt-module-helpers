@@ -20,19 +20,19 @@ metallb_pool_ip5="${first_three_octets}.34"
 metallb_pool_ip6="${first_three_octets}.35"
 
 mkdir -p /var/lib/rancher/rke2/server/manifests
-touch /var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml
 
 mkdir -p /etc/rancher/rke2/
-touch /etc/rancher/rke2/config.yaml
+# touch /etc/rancher/rke2/config.yaml
 
 # If you’re using kube-proxy in IPVS mode, since Kubernetes v1.14.2 you have to enable strict ARP mode.
+# By default, kube-proxy uses promiscuous ARP mode, which is not compatible with MetalLB.
 cat <<EOF >/etc/rancher/rke2/config.yaml
 kube-proxy-arg:
   - proxy-mode=ipvs
   - ipvs-strict-arp=true
 EOF
 
-# Create the file with the desired content
+# Patch Ingress Nginx for metallb
 cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml"
 ---
 apiVersion: helm.cattle.io/v1
@@ -58,37 +58,11 @@ spec:
           metallb.universe.tf/loadBalancerIPs: $load_balancer_ip ## Configure static load balancer IP
 EOF
 
-## Install rke2-server
-curl -sfL https://get.rke2.io | sh -
-systemctl enable rke2-server.service
-systemctl start rke2-server.service
+# Get Metallb manifest
+wget -O /var/lib/rancher/rke2/server/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
 
-## Wait for the services to start and files to be created
-sleep 60
-
-## Get the token
-TOKEN=$(cat /var/lib/rancher/rke2/server/node-token)
-
-## Create worder config.yaml
-# echo "server: https://$SERVER_IP:9345" >/root/config.yaml
-# echo "token: $TOKEN" >>/root/config.yaml
-
-cat <<EOF >/root/config.yaml
-server: https://$SERVER_IP:9345
-token: $TOKEN
-EOF
-
-## Copy kubeconfig and replace the server address
-mkdir /root/.kube
-cp /etc/rancher/rke2/rke2.yaml /root/.kube/config
-sed -i "s/127.0.0.1/$SERVER_IP/g" /root/.kube/config
-cp /root/.kube/config /root/kubeconfig
-
-## Setup metallb
-
-/var/lib/rancher/rke2/bin/kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
-
-cat <<EOF >/tmp/metallb-config.yaml
+# Configure Metallb
+cat <<EOF >/var/lib/rancher/rke2/server/manifests/metallb-config.yaml
 ---
 apiVersion: v1
 kind: Namespace
@@ -124,7 +98,31 @@ spec:
   - default
 EOF
 
-/var/lib/rancher/rke2/bin/kubectl apply -f /tmp/metallb-config.yaml
+## Install rke2-server
+curl -sfL https://get.rke2.io | sh -
+systemctl enable rke2-server.service
+systemctl start rke2-server.service
+
+## Wait for the services to start and files to be created
+sleep 60
+
+## Get the token
+TOKEN=$(cat /var/lib/rancher/rke2/server/node-token)
+
+## Create worder config.yaml
+# echo "server: https://$SERVER_IP:9345" >/root/config.yaml
+# echo "token: $TOKEN" >>/root/config.yaml
+
+cat <<EOF >/root/config.yaml
+server: https://$SERVER_IP:9345
+token: $TOKEN
+EOF
+
+## Copy kubeconfig and replace the server address
+mkdir /root/.kube
+cp /etc/rancher/rke2/rke2.yaml /root/.kube/config
+sed -i "s/127.0.0.1/$SERVER_IP/g" /root/.kube/config
+cp /root/.kube/config /root/kubeconfig
 
 ## Tmp HTTP Server
 chmod +x /tmp/miniserve
