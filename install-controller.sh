@@ -5,7 +5,7 @@ SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
 
 ## Enable nginx compatibility with metallb on RKE2
 # Set the file path
-file_path="/var/lib/rancher/rke2/server/manifests"
+# file_path="/var/lib/rancher/rke2/server/manifests"
 
 # Extract the first 3 octets from $SERVER_IP
 first_three_octets=$(echo "$SERVER_IP" | cut -d. -f1-3)
@@ -22,11 +22,11 @@ metallb_pool_ip6="${first_three_octets}.35"
 mkdir -p /var/lib/rancher/rke2/server/manifests
 touch /var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml
 
-mkdir -p /var/lib/rancher/rke2/
-touch /var/lib/rancher/rke2/config.yaml
+mkdir -p /etc/rancher/rke2/
+touch /etc/rancher/rke2/config.yaml
 
 # If you’re using kube-proxy in IPVS mode, since Kubernetes v1.14.2 you have to enable strict ARP mode.
-cat <<EOF >/var/lib/rancher/rke2/config.yaml
+cat <<EOF >/etc/rancher/rke2/config.yaml
 kube-proxy-arg:
   - proxy-mode=ipvs
   - ipvs-strict-arp=true
