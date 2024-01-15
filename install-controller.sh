@@ -26,11 +26,11 @@ mkdir -p /etc/rancher/rke2/
 
 # If you’re using kube-proxy in IPVS mode, since Kubernetes v1.14.2 you have to enable strict ARP mode.
 # By default, kube-proxy uses promiscuous ARP mode, which is not compatible with MetalLB.
-cat <<EOF >/etc/rancher/rke2/config.yaml
-kube-proxy-arg:
-  - proxy-mode=ipvs
-  - ipvs-strict-arp=true
-EOF
+# cat <<EOF >/etc/rancher/rke2/config.yaml
+# kube-proxy-arg:
+#   - proxy-mode=ipvs
+#   - ipvs-strict-arp=true
+# EOF
 
 # Patch Ingress Nginx for metallb
 # cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml"
