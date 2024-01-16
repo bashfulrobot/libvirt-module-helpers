@@ -1,5 +1,8 @@
 #!/bin/env bash
 
+# Metallb Version
+METALLB_VERSION="v0.13.12"
+
 ## Find the server IP
 SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
 
@@ -24,79 +27,72 @@ mkdir -p /var/lib/rancher/rke2/server/manifests
 mkdir -p /etc/rancher/rke2/
 # touch /etc/rancher/rke2/config.yaml
 
-# If you’re using kube-proxy in IPVS mode, since Kubernetes v1.14.2 you have to enable strict ARP mode.
-# By default, kube-proxy uses promiscuous ARP mode, which is not compatible with MetalLB.
-# cat <<EOF >/etc/rancher/rke2/config.yaml
-# kube-proxy-arg:
-#   - proxy-mode=ipvs
-#   - ipvs-strict-arp=true
-# EOF
-
 # Patch Ingress Nginx for metallb
-# cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml"
-# ---
-# apiVersion: helm.cattle.io/v1
-# kind: HelmChartConfig
-# metadata:
-#   name: rke2-ingress-nginx
-#   namespace: kube-system
-# spec:
-#   valuesContent: |-
-#     controller:
-#       config:
-#         use-forwarded-headers: "true"
-#         enable-real-ip: "true"
-#       publishService:
-#         enabled: true
-#       service:
-#         enabled: true
-#         type: LoadBalancer
-#         external:
-#           enabled: true
-#         externalTrafficPolicy: Local
-#         annotations:
-#           metallb.universe.tf/loadBalancerIPs: $load_balancer_ip ## Configure static load balancer IP
-# EOF
+cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml"
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-ingress-nginx
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    controller:
+      config:
+        use-forwarded-headers: "true"
+        enable-real-ip: "true"
+      publishService:
+        enabled: true
+      service:
+        enabled: true
+        type: LoadBalancer
+        external:
+          enabled: true
+        externalTrafficPolicy: Local
+        annotations:
+          metallb.universe.tf/loadBalancerIPs: $load_balancer_ip ## Configure static load balancer IP
+EOF
 
 # Get Metallb manifest
-# wget -O /var/lib/rancher/rke2/server/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
+wget -O /var/lib/rancher/rke2/server/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
 
 # Configure Metallb
-# cat <<EOF >/var/lib/rancher/rke2/server/manifests/metallb-config.yaml
-# ---
-# apiVersion: v1
-# kind: Namespace
-# metadata:
-#   name: metallb-system
-#   labels:
-#     pod-security.kubernetes.io/enforce: privileged
-#     pod-security.kubernetes.io/audit: privileged
-#     pod-security.kubernetes.io/warn: privileged
-# ---
-# apiVersion: metallb.io/v1beta1
-# kind: IPAddressPool
-# metadata:
-#   name: default
-#   namespace: metallb-system
-# spec:
-#   addresses:
-#   - $metallb_pool_ip1/32
-#   - $metallb_pool_ip2/32
-#   - $metallb_pool_ip3/32
-#   - $metallb_pool_ip4/32
-#   - $metallb_pool_ip5/32
-#   - $metallb_pool_ip6/32
-#   autoAssign: true
-# ---
-# apiVersion: metallb.io/v1beta1
-# kind: L2Advertisement
-# metadata:
-#   name: default
-#   namespace: metallb-system
-# spec:
-#   ipAddressPools:
-#   - default
-# EOF
+cat <<EOF >/var/lib/rancher/rke2/server/manifests/metallb-config.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metallb-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:
+  - $load_balancer_ip/32
+  - $metallb_pool_ip1/32
+  - $metallb_pool_ip2/32
+  - $metallb_pool_ip3/32
+  - $metallb_pool_ip4/32
+  - $metallb_pool_ip5/32
+  - $metallb_pool_ip6/32
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default
+EOF
 
 ## Install rke2-server
 curl -sfL https://get.rke2.io | sh -
