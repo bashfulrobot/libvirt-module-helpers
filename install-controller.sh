@@ -2,6 +2,7 @@
 
 # Metallb Version
 METALLB_VERSION="v0.13.12"
+LONGHORN_VERSION="v1.5.3"
 
 ## Find the server IP
 SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
@@ -93,6 +94,9 @@ spec:
   ipAddressPools:
   - default
 EOF
+
+# Wget the Longhorn manifest
+wget -O /var/lib/rancher/rke2/server/manifests/longhorn.yaml https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml
 
 ## Install rke2-server
 curl -sfL https://get.rke2.io | sh -
