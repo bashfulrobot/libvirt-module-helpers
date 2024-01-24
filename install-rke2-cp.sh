@@ -128,5 +128,9 @@ cp /etc/rancher/rke2/rke2.yaml /root/.kube/config
 sed -i "s/127.0.0.1/$SERVER_IP/g" /root/.kube/config
 cp /root/.kube/config /root/kubeconfig
 
+# It is expected that the worker script will be checking for the config file to be created
+# it pollutes the server log file.
+# remove the repeated errors.
+sed -i '/\[ERROR\] Route \/config.yaml could not be found/d' /home/root/cloud-init-run.log
 ## Delete this script
 ## rm -- "$0"
