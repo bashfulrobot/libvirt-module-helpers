@@ -106,6 +106,10 @@ systemctl start rke2-server.service
 ## Wait for the services to start and files to be created
 sleep 60
 
+## Tmp HTTP Server
+chmod +x /tmp/miniserve
+timeout 30m /tmp/miniserve /root/.
+
 ## Get the token
 TOKEN=$(cat /var/lib/rancher/rke2/server/node-token)
 
@@ -124,8 +128,5 @@ cp /etc/rancher/rke2/rke2.yaml /root/.kube/config
 sed -i "s/127.0.0.1/$SERVER_IP/g" /root/.kube/config
 cp /root/.kube/config /root/kubeconfig
 
-## Tmp HTTP Server
-chmod +x /tmp/miniserve
-timeout 30M /tmp/miniserve /root/.
 ## Delete this script
 ## rm -- "$0"
