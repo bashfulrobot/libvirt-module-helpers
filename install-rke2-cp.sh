@@ -107,8 +107,8 @@ systemctl start rke2-server.service
 sleep 60
 
 ## Tmp HTTP Server
-chmod +x /tmp/miniserve
-timeout 30m /tmp/miniserve /root/.
+chmod +x /tmp/serve
+timeout 30m /tmp/./serve -d /root &
 
 ## Get the token
 TOKEN=$(cat /var/lib/rancher/rke2/server/node-token)
