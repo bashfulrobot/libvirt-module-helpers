@@ -126,6 +126,6 @@ cp /root/.kube/config /root/kubeconfig
 
 ## Tmp HTTP Server
 chmod +x /tmp/miniserve
-/tmp/miniserve /root/.
+timeout 30M /tmp/miniserve /root/.
 ## Delete this script
 ## rm -- "$0"
