@@ -9,6 +9,14 @@ IP_ADDRESS=$(ip -4 addr show $INTERFACE | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 # Change the last octet to .10
 IP_ADDRESS=$(echo $IP_ADDRESS | awk -F. -v OFS=. '{$4="10"; print}')
 
+# Wait for the config.yaml file to exist on controller
+while ! curl --output /dev/null --silent --head --fail "http://$IP_ADDRESS:8080/config.yaml"; do
+    # echo "Waiting for rke confile file to exist..."
+    sleep 5
+done
+
+echo "File exists. Continuing with script..."
+
 # Install rke2-server
 curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
 systemctl enable rke2-server.service
