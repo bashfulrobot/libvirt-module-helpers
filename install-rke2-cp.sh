@@ -96,7 +96,7 @@ spec:
 EOF
 
 # Wget the Longhorn manifest
-wget -O /var/lib/rancher/rke2/server/manifests/longhorn.yaml https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml
+# wget -O /var/lib/rancher/rke2/server/manifests/longhorn.yaml https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml
 
 ## Install rke2-server
 curl -sfL https://get.rke2.io | sh -
