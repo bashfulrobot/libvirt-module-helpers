@@ -3,6 +3,7 @@
 # Metallb Version
 METALLB_VERSION="v0.13.12"
 LONGHORN_VERSION="v1.5.3"
+FLUX_VERSION="2.0.0"
 
 ## Find the server IP
 SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
@@ -22,6 +23,10 @@ metallb_pool_ip3="${first_three_octets}.32"
 metallb_pool_ip4="${first_three_octets}.33"
 metallb_pool_ip5="${first_three_octets}.34"
 metallb_pool_ip6="${first_three_octets}.35"
+
+# Install flux cli
+
+curl -s https://fluxcd.io/install.sh | sudo FLUX_VERSION=$FLUX_VERSION bash
 
 mkdir -p /var/lib/rancher/rke2/server/manifests
 
