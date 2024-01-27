@@ -61,29 +61,29 @@ EOF
 
 # Install Cilium as the CNI
 
-mkdir -p /etc/rancher/rke2
+# mkdir -p /etc/rancher/rke2
 
-cat <<EOF >"/etc/rancher/rke2/config.yaml"
-cni: "cilium"
-disable-kube-proxy: true
-EOF
+# cat <<EOF >"/etc/rancher/rke2/config.yaml"
+# cni: "cilium"
+# disable-kube-proxy: true
+# EOF
 
-cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml"
-apiVersion: helm.cattle.io/v1
-kind: HelmChartConfig
-metadata:
-  name: rke2-cilium
-  namespace: kube-system
-spec:
-  valuesContent: |-
-    kubeProxyReplacement: true
-    k8sServiceHost: "$SERVER_IP"
-    k8sServicePort: "6443"
-    # ingressController:
-    #   enabled: false
-    # gatewayAPI:
-    #   enabled: true
-EOF
+# cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml"
+# apiVersion: helm.cattle.io/v1
+# kind: HelmChartConfig
+# metadata:
+#   name: rke2-cilium
+#   namespace: kube-system
+# spec:
+#   valuesContent: |-
+#     kubeProxyReplacement: true
+#     k8sServiceHost: "$SERVER_IP"
+#     k8sServicePort: "6443"
+#     # ingressController:
+#     #   enabled: false
+#     # gatewayAPI:
+#     #   enabled: true
+# EOF
 
 # Get Metallb manifest
 wget -O /var/lib/rancher/rke2/server/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
