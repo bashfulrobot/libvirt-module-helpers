@@ -30,7 +30,7 @@ EOT
 sysctl --system
 
 # Install Containerd Runtime
-apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+apt install -y curl gpg software-properties-common apt-transport-https ca-certificates
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmour -o /etc/apt/trusted.gpg.d/docker.gpg
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
