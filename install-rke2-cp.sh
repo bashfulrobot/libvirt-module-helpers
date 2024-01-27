@@ -3,7 +3,7 @@
 # Metallb Version
 METALLB_VERSION="v0.13.12"
 LONGHORN_VERSION="v1.5.3"
-FLUX_VERSION="2.0.0"
+FLUX_VERSION="2.2.2"
 
 ## Find the server IP
 SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
