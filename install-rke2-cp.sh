@@ -68,18 +68,18 @@ cat <<EOF >"/etc/rancher/rke2/config.yaml"
 cni: cilium
 EOF
 
-cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml"
----
-apiVersion: helm.cattle.io/v1
-kind: HelmChartConfig
-metadata:
-  name: rke2-cilium
-  namespace: kube-system
-spec:
-  valuesContent: |-
-    eni:
-      enabled: true
-EOF
+# cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml"
+# ---
+# apiVersion: helm.cattle.io/v1
+# kind: HelmChartConfig
+# metadata:
+#   name: rke2-cilium
+#   namespace: kube-system
+# spec:
+#   valuesContent: |-
+#     eni:
+#       enabled: true
+# EOF
 
 
 # Get Metallb manifest
