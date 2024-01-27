@@ -61,12 +61,11 @@ EOF
 
 # Install Cilium as the CNI
 
-mkdir -p /etc/rancher/rke2
+# mkdir -p /etc/rancher/rke2
 
-
-cat <<EOF >"/etc/rancher/rke2/config.yaml"
-cni: cilium
-EOF
+# cat <<EOF >"/etc/rancher/rke2/config.yaml"
+# cni: cilium
+# EOF
 
 # cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml"
 # ---
@@ -80,7 +79,6 @@ EOF
 #     eni:
 #       enabled: true
 # EOF
-
 
 # Get Metallb manifest
 wget -O /var/lib/rancher/rke2/server/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml

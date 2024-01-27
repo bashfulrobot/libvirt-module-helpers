@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 # Reference https://akyriako.medium.com/install-kubernetes-1-27-with-cilium-on-ubuntu-16193c7c2ac6
-export VERSION = "1.28.0-00"
+export VERSION="1.28.0-00"
 
-export CONTROL_NODE_IP = "192.168.1.210"
-export K8S_POD_NETWORK_CIDR = "10.244.0.0/16"
+export CONTROL_NODE_IP="10.200.0.10"
+export K8S_POD_NETWORK_CIDR="10.244.0.0/16"
 
-export CILIUM_VERSION = "1.14.0"
+export CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+export CILIUM_VERSION="1.14.6"
 
 # Create /etc/hosts file
 # Disable swap & Add kernel Parameters
@@ -30,7 +31,7 @@ EOT
 sysctl --system
 
 # Install Containerd Runtime
-apt install -y curl gpg software-properties-common apt-transport-https ca-certificates
+apt install -y curl gnupg software-properties-common apt-transport-https ca-certificates
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmour -o /etc/apt/trusted.gpg.d/docker.gpg
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
