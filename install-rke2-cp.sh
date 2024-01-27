@@ -133,7 +133,7 @@ EOF
 # wget -O /var/lib/rancher/rke2/server/manifests/longhorn.yaml https://raw.githubusercontent.com/longhorn/longhorn/$LONGHORN_VERSION/deploy/longhorn.yaml
 
 ## Install rke2-server
-curl -sfL https://get.rke2.io | sh -
+curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=latest sh -
 systemctl enable rke2-server.service
 systemctl start rke2-server.service
 
