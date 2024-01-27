@@ -61,8 +61,11 @@ EOF
 
 # Install Cilium as the CNI
 
-# mkdir -p /etc/rancher/rke2
+mkdir -p /etc/rancher/rke2/
 
+cat <<EOF >"/etc/rancher/rke2/config.yaml"
+cni: "none"
+EOF
 # cat <<EOF >"/etc/rancher/rke2/config.yaml"
 # cni: "cilium"
 # disable-kube-proxy: true
