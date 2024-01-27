@@ -26,7 +26,7 @@ metallb_pool_ip6="${first_three_octets}.35"
 
 # Install flux cli
 
-curl -s https://fluxcd.io/install.sh | sudo FLUX_VERSION=$FLUX_VERSION bash
+#curl -s https://fluxcd.io/install.sh | sudo FLUX_VERSION=$FLUX_VERSION bash
 
 mkdir -p /var/lib/rancher/rke2/server/manifests
 
@@ -58,6 +58,29 @@ spec:
         annotations:
           metallb.universe.tf/loadBalancerIPs: $load_balancer_ip ## Configure static load balancer IP
 EOF
+
+# Install Cilium as the CNI
+
+mkdir -p /etc/rancher/rke2
+
+
+cat <<EOF >"/etc/rancher/rke2/config.yaml"
+cni: cilium
+EOF
+
+cat <<EOF >"/var/lib/rancher/rke2/server/manifests/rke2-cilium-config.yaml"
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-cilium
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    eni:
+      enabled: true
+EOF
+
 
 # Get Metallb manifest
 wget -O /var/lib/rancher/rke2/server/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
