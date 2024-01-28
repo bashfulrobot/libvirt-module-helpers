@@ -209,6 +209,8 @@ echo '#!/usr/bin/env bash' >/root/join-worker.sh
 echo $(kubeadm token create --print-join-command) >>/root/join-worker.sh
 chmod +x /root/join-worker.sh
 
+sleep 120
+
 ##### Install Cilium
 # cilium install --version 1.14.6
 
