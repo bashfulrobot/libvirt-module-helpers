@@ -1,101 +1,36 @@
 #!/usr/bin/env bash
 
-# Reference https://akyriako.medium.com/install-kubernetes-1-27-with-cilium-on-ubuntu-16193c7c2ac6
-export VERSION="1.28.0-00"
+#https://computingforgeeks.com/install-kubernetes-cluster-ubuntu-jammy/
 
-export CONTROL_NODE_IP="10.200.0.10"
-export K8S_POD_NETWORK_CIDR="10.244.0.0/16"
+#https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
+#
 
-export CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
-export CILIUM_VERSION="1.14.6"
+##### Needed Info
 
-# Create /etc/hosts file
-# Disable swap & Add kernel Parameters
-swapoff -a
-sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+# Metallb Version
+METALLB_VERSION="v0.13.12"
 
-tee /etc/modules-load.d/containerd.conf <<EOF
-overlay
-br_netfilter
-EOF
+## Find the server IP
+SERVER_IP=$(ip -o -4 addr list | awk '{print $4}' | cut -d/ -f1 | grep '.10$')
 
-modprobe overlay
-modprobe br_netfilter
+# Extract the first 3 octets from $SERVER_IP
+first_three_octets=$(echo "$SERVER_IP" | cut -d. -f1-3)
 
-tee /etc/sysctl.d/kubernetes.conf <<EOT
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-net.ipv4.ip_forward = 1
-EOT
+# Build the complete metallb IP address - .5 is the load balancer IP
+load_balancer_ip="${first_three_octets}.5"
+metallb_pool_ip1="${first_three_octets}.30"
+metallb_pool_ip2="${first_three_octets}.31"
+metallb_pool_ip3="${first_three_octets}.32"
+metallb_pool_ip4="${first_three_octets}.33"
+metallb_pool_ip5="${first_three_octets}.34"
+metallb_pool_ip6="${first_three_octets}.35"
 
-sysctl --system
+###### Install dependencies
 
-# Install Containerd Runtime
-apt install -y curl gnupg software-properties-common apt-transport-https ca-certificates
+apt-get update && apt-get install -y apt-transport-https ca-certificates curl
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmour -o /etc/apt/trusted.gpg.d/docker.gpg
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-apt update
-apt install -y containerd.io
-
-# if you configure systemd as the cgroup driver for the kubelet, you must also configure systemd as the cgroup driver for the container runtime. containerd is using /etc/containerd/config.toml to configure its daemon.
-
-containerd config default | tee /etc/containerd/config.toml >/dev/null 2>&1
-# sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
-
-cat <<EOF | tee -a /etc/containerd/config.toml
-[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
-[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
-SystemdCgroup = true
-EOF
-
-# enable CRI plugins
-sed -i 's/^disabled_plugins \=/\#disabled_plugins \=/g' /etc/containerd/config.toml
-
-# install the CNI plugins
-mkdir -p /opt/cni/bin/
-wget https://github.com/containernetworking/plugins/releases/download/v1.3.0/cni-plugins-linux-amd64-v1.3.0.tgz
-tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.3.0.tgz
-
-systemctl restart containerd
-systemctl enable containerd
-
-# Add Apt Repository for Kubernetes
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
-
-# Install Kubectl, Kubeadm and Kubelet
-apt update
-apt-get install -y kubelet=$VERSION kubeadm=$VERSION kubectl=$VERSION kubernetes-cni
-apt-mark hold kubelet kubeadm kubectl
-
-# Install Kubernetes Cluster on Ubuntu 22.04
-# TODO: Change the IP address to your master node IP address
-# kubeadm init --control-plane-endpoint=k8smaster.example.net 2>&1 | tee /root/kubeadm.log
-
-systemctl enable kubelet
-
-kubeadm init \
-    --apiserver-advertise-address=$CONTROL_NODE_IP \
-    --pod-network-cidr=$K8S_POD_NETWORK_CIDR \
-    --ignore-preflight-errors=NumCPU \
-    --skip-phases=addon/kube-proxy \
-    --control-plane-endpoint $CONTROL_NODE_IP \
-    --upload-certs 2>&1 | tee /root/kubeadm.log
-
-# Copy Kube Config
-mkdir -p $HOME/.kube
-cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-cp -i /etc/kubernetes/admin.conf $HOME/kubeconfig
-chown $(id -u):$(id -g) $HOME/.kube/config
-
-echo "Environment=\"KUBELET_EXTRA_ARGS=--node-ip=$MASTER_NODE_IP\"" | sudo tee -a /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-
-kubeadm token create --print-join-command >/root/join-command.sh
-
-# Install Cilium
-CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/master/stable.txt)
+# Install cilium CLI
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
 CLI_ARCH=amd64
 if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
 curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
@@ -103,4 +38,182 @@ sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
 sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 
-sudo cilium install --version $CILIUM_VERSION
+##### Add extra manifests
+mkdir -p /etc/kubernetes/manifests
+
+# Get Metallb manifest
+wget -O /etc/kubernetes/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
+
+# Configure Metallb
+cat <<EOF >/var/lib/rancher/rke2/server/manifests/metallb-config.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metallb-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:
+  - $load_balancer_ip/32
+  - $metallb_pool_ip1/32
+  - $metallb_pool_ip2/32
+  - $metallb_pool_ip3/32
+  - $metallb_pool_ip4/32
+  - $metallb_pool_ip5/32
+  - $metallb_pool_ip6/32
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default
+EOF
+
+##### Install kubeadm
+
+# Add the repository
+
+# Check version to be installed, if not set, defalt to below
+K8S_VERSION=${K8S_VERSION:-"1.29"}
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v${K8S_VERSION}/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list
+
+curl -fsSL "https://pkgs.k8s.io/core:/stable:/v${K8S_VERSION}/deb/Release.key" | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+apt update
+
+# Install the specified version
+apt-get install -qy kubelet kubectl kubeadm
+
+apt-mark hold kubelet kubeadm kubectl
+
+##### Host Configuration
+
+# Disable swap
+swapoff -a
+sed -i.bak -r 's/(.+ swap .+)/#\1/' /etc/fstab
+mount -a
+
+# Enable kernel modules
+modprobe overlay
+modprobe br_netfilter
+
+# Add some settings to sysctl
+tee /etc/sysctl.d/kubernetes.conf <<EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+# Reload sysctl
+sysctl --system
+
+##### Installing Containerd
+
+# Configure persistent loading of modules
+tee /etc/modules-load.d/k8s.conf <<EOF
+overlay
+br_netfilter
+EOF
+
+# Load at runtime
+modprobe overlay
+modprobe br_netfilter
+
+# Ensure sysctl params are set
+tee /etc/sysctl.d/kubernetes.conf <<EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+
+# Reload configs
+sysctl --system
+
+# Install required packages
+apt install -y curl gnupg2 software-properties-common apt-transport-https ca-certificates
+
+# Add Docker repo
+
+# Unused as I am using the version from the ubuntu repo
+# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/docker-archive-keyring.gpg
+# echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+# apt update
+# apt install -y containerd # docker repo version. Disables CRI intetration
+
+# Install containerd
+apt update
+# apt install -y containerd # docker repo version. Disables CRI intetration
+
+apt install -y containerd
+
+# Configure containerd and start service
+mkdir -p /etc/containerd
+containerd config default | tee /etc/containerd/config.toml
+
+# Enable Systemd cgroup integration as per https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
+sed -i '/SystemdCgroup =/s/false/true/' /etc/containerd/config.toml
+
+# restart containerd
+systemctl restart containerd
+systemctl enable containerd
+systemctl status containerd
+
+##### Kubernetes Cluster Setup
+
+# enable kubelet
+systemctl enable kubelet
+
+# Pull images
+kubeadm config images pull
+
+# Initialize Kubernetes Cluster
+# --control-plane-endpoint :  set the shared endpoint for all control-plane nodes. Can be DNS/IP (IE loadbalancer IP/DNS)
+# --pod-network-cidr : Used to set a Pod network add-on CIDR
+# --cri-socket : Use if have more than one container runtime to set runtime socket path
+# --apiserver-advertise-address : Set advertise address for this particular control-plane node's API server (IE Single CP Node Cluster)
+
+# Note 10.0.0.0/8 is the default for Cilium
+kubeadm init --upload-certs --pod-network-cidr=10.0.0.0/8 --apiserver-advertise-address=${SERVER_IP}
+
+# wait for cluster to be ready
+sleep 30
+
+# Copy kube config
+mkdir -p /root/.kube
+cp -i /etc/kubernetes/admin.conf /root/.kube/config
+chown $(id -u):$(id -g) /root/.kube/config
+
+# rename users and cluster
+sed -i 's/kubernetes-admin@kubernetes/overlord@darkstar/g' /root/.kube/config
+sed -i 's/kubernetes-admin/overlord/g' /root/.kube/config
+sed -i 's/kubernetes/darkstar/g' /root/.kube/config
+
+# Used for retreival from the desktop
+cp /root/.kube/config /root/kubeconfig
+
+# create join command script for later reference
+echo '#!/usr/bin/env bash' >/root/join-worker.sh
+echo $(kubeadm token create --print-join-command) >>/root/join-worker.sh
+chmod + x /root/join-worker.sh
+
+##### Install Cilium
+cilium install --version 1.14.6
+
+sleep 30
+
+##### Tmp HTTP Server
+chmod +x /tmp/serve
+timeout 30m /tmp/serve -d /root &
