@@ -186,7 +186,7 @@ kubeadm config images pull
 # --apiserver-advertise-address : Set advertise address for this particular control-plane node's API server (IE Single CP Node Cluster)
 
 # Note 10.0.0.0/8 is the default for Cilium
-kubeadm init --upload-certs --pod-network-cidr=10.0.0.0/8 --apiserver-advertise-address=${SERVER_IP}
+kubeadm init --upload-certs --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=${SERVER_IP}
 
 # wait for cluster to be ready
 sleep 30
@@ -210,7 +210,10 @@ echo $(kubeadm token create --print-join-command) >>/root/join-worker.sh
 chmod + x /root/join-worker.sh
 
 ##### Install Cilium
-cilium install --version 1.14.6
+# cilium install --version 1.14.6
+
+##### Install Flannel
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
 sleep 30
 
