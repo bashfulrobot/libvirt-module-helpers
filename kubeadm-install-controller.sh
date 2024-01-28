@@ -45,7 +45,7 @@ mkdir -p /etc/kubernetes/manifests
 wget -O /etc/kubernetes/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
 
 # Configure Metallb
-cat <<EOF >/var/lib/rancher/rke2/server/manifests/metallb-config.yaml
+cat <<EOF >/etc/kubernetes/manifests/metallb-config.yaml
 ---
 apiVersion: v1
 kind: Namespace
