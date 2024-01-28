@@ -213,7 +213,7 @@ chmod +x /root/join-worker.sh
 # cilium install --version 1.14.6
 
 ##### Install Flannel
-kubectl --validate=false apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
 sleep 30
 
