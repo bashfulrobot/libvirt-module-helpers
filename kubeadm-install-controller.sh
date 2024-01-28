@@ -207,13 +207,13 @@ cp /root/.kube/config /root/kubeconfig
 # create join command script for later reference
 echo '#!/usr/bin/env bash' >/root/join-worker.sh
 echo $(kubeadm token create --print-join-command) >>/root/join-worker.sh
-chmod + x /root/join-worker.sh
+chmod +x /root/join-worker.sh
 
 ##### Install Cilium
 # cilium install --version 1.14.6
 
 ##### Install Flannel
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+kubectl --validate=false apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
 sleep 30
 
