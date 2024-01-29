@@ -209,16 +209,6 @@ echo '#!/usr/bin/env bash' >/root/join-worker.sh
 echo $(kubeadm token create --print-join-command) >>/root/join-worker.sh
 chmod +x /root/join-worker.sh
 
-sleep 120
-
-##### Install Cilium
-# cilium install --version 1.14.6
-
-##### Install Flannel
-# kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
-
-sleep 30
-
 ##### Tmp HTTP Server
 chmod +x /tmp/serve
 timeout 30m /tmp/serve -d /root &
