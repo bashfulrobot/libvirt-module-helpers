@@ -29,50 +29,6 @@ metallb_pool_ip6="${first_three_octets}.35"
 
 apt-get update && apt-get install -y apt-transport-https ca-certificates curl
 
-##### Add extra manifests
-mkdir -p /etc/kubernetes/manifests
-
-# Get Metallb manifest
-wget -O /etc/kubernetes/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
-
-# Configure Metallb
-cat <<EOF >/etc/kubernetes/manifests/metallb-config.yaml
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: metallb-system
-  labels:
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
----
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: default
-  namespace: metallb-system
-spec:
-  addresses:
-  - $load_balancer_ip/32
-  - $metallb_pool_ip1/32
-  - $metallb_pool_ip2/32
-  - $metallb_pool_ip3/32
-  - $metallb_pool_ip4/32
-  - $metallb_pool_ip5/32
-  - $metallb_pool_ip6/32
-  autoAssign: true
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: default
-  namespace: metallb-system
-spec:
-  ipAddressPools:
-  - default
-EOF
-
 ##### Install kubeadm
 
 # Add the repository
@@ -199,6 +155,47 @@ cp /root/.kube/config /root/kubeconfig
 echo '#!/usr/bin/env bash' >/root/join-worker.sh
 echo $(kubeadm token create --print-join-command) >>/root/join-worker.sh
 chmod +x /root/join-worker.sh
+
+# Get Metallb manifest
+wget -O /etc/kubernetes/manifests/metallb-native.yaml https://raw.githubusercontent.com/metallb/metallb/$METALLB_VERSION/config/manifests/metallb-native.yaml
+
+# Configure Metallb
+cat <<EOF >/etc/kubernetes/manifests/metallb-config.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: metallb-system
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  addresses:
+  - $load_balancer_ip/32
+  - $metallb_pool_ip1/32
+  - $metallb_pool_ip2/32
+  - $metallb_pool_ip3/32
+  - $metallb_pool_ip4/32
+  - $metallb_pool_ip5/32
+  - $metallb_pool_ip6/32
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default
+EOF
 
 ##### Tmp HTTP Server
 chmod +x /tmp/serve
