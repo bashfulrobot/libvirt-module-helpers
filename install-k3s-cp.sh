@@ -151,9 +151,9 @@ TOKEN=$(cat /var/lib/rancher/k3s/server/node-token)
 # echo "server: https://$SERVER_IP:9345" >/root/config.yaml
 # echo "token: $TOKEN" >>/root/config.yaml
 
-cat <<EOF >/root/config.yaml
-server: https://$SERVER_IP:9345
-token: $TOKEN
+cat <<EOF >/root/join-agent.sh
+#!/bin/env bash
+curl -sfL https://get.k3s.io | K3S_URL=https://$SERVER_IP:6443 K3S_TOKEN=$TOKEN sh -
 EOF
 
 ## Copy kubeconfig and replace the server address
