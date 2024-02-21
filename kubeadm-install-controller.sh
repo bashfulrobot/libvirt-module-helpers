@@ -12,7 +12,7 @@
 # - empty (used flannel pod CIDR - 10.244.0.0/16)
 # - calico (uses calico pod CIDR - 192.168.0.0/16)
 # - cilium (used cilium pod CIDR - 10.0.0.0/8, disbles `kube-proxy`)
-CNI=${CNI:-}  # Retrieve the CNI variable, defaulting to empty if not set
+${CNI:-$CNI}  # Retrieve the CNI variable, defaulting to empty if not set
 
 
 # Metallb Version
