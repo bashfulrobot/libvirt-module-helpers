@@ -47,6 +47,9 @@ apt-get install -qy kubelet kubectl kubeadm
 
 apt-mark hold kubelet kubeadm kubectl
 
+# Update kernel to support cilium
+apt install linux-image-generic-hwe-22.04 -y
+
 ##### Host Configuration
 
 # Disable swap
