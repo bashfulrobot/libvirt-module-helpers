@@ -141,9 +141,9 @@ kubeadm config images pull
 # --apiserver-advertise-address : Set advertise address for this particular control-plane node's API server (IE Single CP Node Cluster)
 
 # Check if /root/cni file exists
-if [[ -f "/root/cni" ]]; then
+if [[ -f "/tmp/cni" ]]; then
     # Read the content of /root/cni file
-    CNI=$(<"/root/cni")
+    CNI=$(<"/tmp/cni")
 
     if [[ "${CNI}" == "cilium" ]]; then
         # CNI variable is set to "cilium", run specific command
