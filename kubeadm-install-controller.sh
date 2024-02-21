@@ -7,6 +7,14 @@
 
 ##### Needed Info
 
+# Which CNI, sets pod CIDR in `kubeadm init`
+# Valid Settings:
+# - empty (used flannel pod CIDR - 10.244.0.0/16)
+# - calico (uses calico pod CIDR - 192.168.0.0/16)
+# - cilium (used cilium pod CIDR - 10.0.0.0/8, disbles `kube-proxy`)
+CNI=${CNI:-}  # Retrieve the CNI variable, defaulting to empty if not set
+
+
 # Metallb Version
 METALLB_VERSION="v0.13.12"
 
@@ -132,8 +140,21 @@ kubeadm config images pull
 # --cri-socket : Use if have more than one container runtime to set runtime socket path
 # --apiserver-advertise-address : Set advertise address for this particular control-plane node's API server (IE Single CP Node Cluster)
 
-# Note 10.0.0.0/8 is the default for Cilium
-kubeadm init --upload-certs --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=${SERVER_IP}
+
+if [[ -z "${CNI}" ]]; then
+    # CNI variable is not set, run default command
+    kubeadm init --upload-certs --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=${SERVER_IP}
+elif [[ "${CNI}" == "cilium" ]]; then
+    # CNI variable is set to "cilium", run specific command
+    kubeadm init --upload-certs --pod-network-cidr=10.0.0.0/8 --apiserver-advertise-address=${SERVER_IP} --skip-phases=addon/kube-proxy
+elif [[ "${CNI}" == "calico" ]]; then
+    # CNI variable is set to "calico", run specific command
+    kubeadm init --upload-certs --pod-network-cidr=192.168.0.0/16 --apiserver-advertise-address=${SERVER_IP}
+else
+    # CNI variable is set to an unexpected value, handle the error
+    echo "Invalid CNI value: ${CNI}"
+    exit 1  # Terminate the script with an error code
+fi
 
 # wait for cluster to be ready
 sleep 30
