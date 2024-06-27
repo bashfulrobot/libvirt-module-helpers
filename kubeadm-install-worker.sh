@@ -28,7 +28,7 @@ wget -O /tmp/join-worker.sh http://$IP_ADDRESS:8080/join-worker.sh
 
 ###### Install dependencies
 
-apt-get update && apt-get install -y apt-transport-https ca-certificates curl
+apt-get update && apt-get install -y apt-transport-https ca-certificates curl gpg
 
 ##### Install kubeadm
 

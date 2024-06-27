@@ -35,7 +35,7 @@ metallb_pool_ip6="${first_three_octets}.35"
 
 ###### Install dependencies
 
-apt-get update && apt-get install -y apt-transport-https ca-certificates curl
+apt-get update && apt-get install -y apt-transport-https ca-certificates curl gpg
 
 ##### Install kubeadm
 
